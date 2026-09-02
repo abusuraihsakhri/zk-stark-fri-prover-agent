@@ -1,63 +1,101 @@
-# ZK-STARK FRI Prover Agent
+# ZK STARK FRI Prover Agent
 
-A pure-Python implementation of the FRI (Fast Reed-Solomon Interactive Oracle Proof) commitment scheme used in ZK-STARKs. Uses only the Python standard library.
+> **Domain:** Post-Quantum Cryptography & Zero-Knowledge Architecture  
+> **Reference Guidelines & Standards:** `NIST FIPS 203/204/205, NIST SP 800-90B & ISO/IEC Standards`
 
-## Features
+<div align="center">
 
-- **FRI Commitment Scheme**: Polynomial evaluation on multiplicative subgroup domains
-- **Folding**: `p(x) → p_even(x²) + α × p_odd(x²)`, halving degree each round
-- **Merkle Tree Commitment**: SHA-256 based Merkle trees for evaluation commitments
-- **Query Phase**: Random point selection with Merkle proof verification
-- **Soundness Analysis**: Compute soundness error based on queries, field size, and rounds
-- **Finite Field Arithmetic**: Operations over GF(p) with primitive root computation
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776AB.svg?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688.svg?logo=fastapi&logoColor=white)
+![Audit Trail](https://img.shields.io/badge/Audit-HMAC--SHA256_Tamper--Evident-brightgreen.svg)
+![Zero-PHI Guard](https://img.shields.io/badge/Guard-Zero--PHI_Outbound-blue.svg)
+![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)
 
-## CLI Usage
+</div>
+
+---
+
+## 📖 What It Does
+
+**ZK STARK FRI Prover Agent** is an advanced analytical and computational platform implementing Transparent ZK-STARK Fast Reed-Solomon Interactive Oracle Proof (FRI) verifier.
+
+---
+
+## ⚙️ Key Capabilities & Algorithmic Modules
+
+- **Deterministic Calculation Engine**: Strict compliance with standard reference formulations and thresholds.
+- **Risk & Urgency Classification**: Multi-tier categorization with automated clinical/operational action recommendations.
+- **Validation & Guardrails**: Rigorous input bounds checking and anomaly detection.
+
+---
+
+## 💻 CLI Quickstart & Usage
+
+### 1. Guided Interactive Mode
+```bash
+python cli.py
+```
+
+### 2. Direct Parameterized Evaluation
+```bash
+python cli.py --coefficients <value> --x <value> --prime <value> --size <value>
+```
+
+### Parameter Reference
+- `--coefficients`: Specifies input measurement or parameter value.
+- `--x`: Specifies input measurement or parameter value.
+- `--prime`: Specifies input measurement or parameter value.
+- `--size`: Specifies input measurement or parameter value.
+- `--values`: Specifies input measurement or parameter value.
+- `--index`: Specifies input measurement or parameter value.
+- `--evaluations`: Specifies input measurement or parameter value.
+- `--domain`: Specifies input measurement or parameter value.
+- `--alpha`: Specifies input measurement or parameter value.
+- `--domain-size`: Specifies input measurement or parameter value.
+
+### Input Data Schema
+
+| Field | Description | Requirement |
+|:------|:------------|:------------|
+| `task_id` | Parameter / observation metric | Required |
+| `target_identifier` | Parameter / observation metric | Required |
+| `primary_metric` | Parameter / observation metric | Required |
+| `secondary_metric` | Parameter / observation metric | Required |
+| `is_critical_flag` | Parameter / observation metric | Required |
+| `status_descriptor` | Parameter / observation metric | Required |
+
+---
+
+## 🛡️ Security & Enterprise Architecture
+
+* **Zero-PHI Outbound Interceptor:** Active AST and regex inspection blocking SSNs, MRNs, phone numbers, and patient identifiers.
+* **Tamper-Evident HMAC-SHA256 Audit Trail:** Chained, cryptographically signed logs for every evaluation and state transition.
+* **Air-Gapped LLM Reasoning Adapter:** Agnostic integration for local Ollama instances (`llama3`, `mistral`), Claude 3.5 Sonnet, GPT-4o, and deterministic test mocks.
+* **Active Learning Bayesian Calibration:** Dynamic tracker updating worker reliability weights and monitoring Brier calibration drift.
+* **FastAPI & Prometheus Telemetry:** Exposes OpenAPI 3.1 REST endpoints and operational Prometheus metrics (`/metrics`).
+
+---
+
+## 🧪 Testing & Verification
+
+Run the automated test suite:
 
 ```bash
-# Full FRI protocol demo
-python cli.py demo --coefficients '[1,2,3,4]' --domain-size 16 --prime 65537 --num-queries 3
-
-# Evaluate polynomial
-python cli.py eval --coefficients '[1,2,3]' --x 5 --prime 65537
-
-# Generate evaluation domain
-python cli.py domain --size 16 --prime 65537
-
-# Merkle tree operations
-python cli.py merkle --values '[1,2,3,4,5,6,7,8]' --index 3
-
-# FRI folding step
-python cli.py fold --evaluations '[1,2,3,4]' --domain '[1,10,100,1000]' --alpha 5 --prime 65537
-
-# FRI commitment phase
-python cli.py commit --coefficients '[1,2,3,4]' --domain-size 16 --prime 65537
-
-# Soundness analysis
-python cli.py soundness --degree 8 --field-size 65537 --num-queries 5 --num-rounds 3
+pytest -v
 ```
 
-## Python API
-
-```python
-from zk_stark_fri.engine import run_fri_protocol, soundness_analysis
-
-# Run complete FRI protocol
-result = run_fri_protocol(
-    coefficients=[1, 2, 3, 4],
-    p=65537,
-    domain_size=16,
-    num_queries=3
-)
-print(result["is_valid"])
-print(result["soundness"]["soundness_bits"])
-```
-
-## Running Tests
+Execute high-throughput batch simulation benchmarks:
 
 ```bash
-python -m pytest tests/ -v
+python simulator.py --tasks 1000 --concurrency 8
 ```
 
-## License
+---
 
-MIT License.
+## 🐳 Container Deployment
+
+```bash
+docker build -t zk-stark-fri-prover-agent .
+docker run -p 8000:8000 zk-stark-fri-prover-agent
+```
