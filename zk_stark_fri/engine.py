@@ -535,3 +535,73 @@ def run_fri_protocol(coefficients: List[int], p: int, domain_size: int,
         "soundness": soundness,
         "is_valid": is_valid,
     }
+
+
+# ---------------------------------------------------------------------------
+# Frontier Domain Engine (parameter evaluation for agent auditing)
+# ---------------------------------------------------------------------------
+
+class FrontierDomainEngine:
+    """Domain-specific evaluation engine used by ZK-STARK agent sub-auditors.
+
+    Each *evaluate* classmethod inspects a single metric/description and
+    returns ``None`` when the value is within acceptable bounds, or a dict
+    with ``summary``, ``details``, and ``remediation`` keys when an anomaly
+    is detected.
+    """
+
+    PRIMARY_THRESHOLD: float = 25.0
+    SECONDARY_THRESHOLD: float = 12.0
+    DISCORDANT_KEYWORDS = ("DISCORDANT", "ANOMALY", "MUTANT", "VIOLATION", "FAIL", "REJECT")
+
+    @classmethod
+    def evaluate_primary_parameter(cls, primary_metric: float):
+        """Flag primary metrics that exceed the reference threshold."""
+        if primary_metric > cls.PRIMARY_THRESHOLD:
+            return {
+                "summary": "Primary Parameter Threshold Exceeded",
+                "details": (
+                    f"Primary measurement ({primary_metric:.2f}) exceeds upper "
+                    f"reference limit ({cls.PRIMARY_THRESHOLD:.2f})."
+                ),
+                "remediation": (
+                    "Initiate recalibration workflow and review secondary "
+                    "parameters."
+                ),
+            }
+        return None
+
+    @classmethod
+    def evaluate_secondary_kinetics(cls, secondary_metric: float, is_critical_flag: bool):
+        """Flag secondary kinetics that breach safety bounds or are marked critical."""
+        if is_critical_flag or secondary_metric > cls.SECONDARY_THRESHOLD:
+            return {
+                "summary": "Critical Safety Interlock Triggered",
+                "details": (
+                    f"CriticalFlag={is_critical_flag} with secondary index "
+                    f"{secondary_metric:.2f}."
+                ),
+                "remediation": (
+                    "Execute immediate closed-loop escalation and notify "
+                    "attending supervisor."
+                ),
+            }
+        return None
+
+    @classmethod
+    def audit_specification_conformance(cls, status_descriptor: str, attributes: dict):
+        """Detect protocol discordance in the status descriptor."""
+        desc_upper = str(status_descriptor).upper()
+        if any(kw in desc_upper for kw in cls.DISCORDANT_KEYWORDS):
+            return {
+                "summary": "Protocol Conformance Discordance Detected",
+                "details": (
+                    f"Descriptor '{status_descriptor}' indicates discordance "
+                    f"with Transparent ZK-STARK Protocol specifications."
+                ),
+                "remediation": (
+                    "Re-evaluate input specimen or rerun secondary confirmation "
+                    "assay."
+                ),
+            }
+        return None

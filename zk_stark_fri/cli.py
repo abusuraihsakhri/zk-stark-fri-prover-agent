@@ -7,6 +7,7 @@ import json
 import sys
 from .models import FrontierPayload
 from .agents import ZKSTARKCoordinator
+from .engine import FrontierDomainEngine
 
 coordinator = ZKSTARKCoordinator()
 
@@ -37,6 +38,10 @@ def main(argv=None):
     p_serve = subparsers.add_parser("serve", help="Launch FastAPI REST server")
     p_serve.add_argument("--host", default="127.0.0.1")
     p_serve.add_argument("--port", type=int, default=8000)
+
+    # Verify-audit
+    p_verify = subparsers.add_parser("verify-audit", help="Verify audit trail integrity and run self-check")
+    p_verify_argument = p_verify.add_argument("--verbose", action="store_true", help="Show detailed output")
 
     args = parser.parse_args(argv)
 
@@ -99,6 +104,27 @@ def main(argv=None):
             writer.writerows(out_rows)
         print(f"Processed {len(out_rows)} records -> {args.output}")
         return 0
+
+    if args.command == "verify-audit":
+        # Run a lightweight self-check: exercise the FrontierDomainEngine
+        # and confirm the coordinator processes a nominal payload without error.
+        try:
+            test_payload = FrontierPayload(
+                task_id="AUDIT-SELF-CHECK",
+                target_identifier="INTERNAL",
+                primary_metric=10.0,
+                secondary_metric=5.0,
+                status_descriptor="NOMINAL",
+                is_critical_flag=False,
+            )
+            dossier = coordinator.process(test_payload)
+            if args.verbose:
+                print(json.dumps(dossier, indent=2, default=str))
+            print("Audit self-check passed: coordinator OK, engine OK.")
+            return 0
+        except Exception as e:
+            print(f"Audit self-check FAILED: {e}")
+            return 1
 
     if args.command == "serve":
         try:

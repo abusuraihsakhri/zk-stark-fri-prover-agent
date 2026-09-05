@@ -59,7 +59,6 @@ def test_supervisor_consensus_and_audit():
     # Verify cryptographic audit trail
     assert AuditLogger.verify_integrity() is True
 
-    # CLI tests
-    assert main(["audit", "--task-id", "CLI-TEST-01"]) == 0
-    assert main(["chat", "Explain", "specifications"]) == 0
-    assert main(["verify-audit"]) == 0
+    # CLI tests (FRI engine CLI)
+    assert main(["eval", "--coefficients", "[1, 2, 3, 4]", "--x", "2", "--prime", "65537"]) == 0
+    assert main(["demo", "--coefficients", "[1, 2, 3, 4]", "--domain-size", "16"]) == 0

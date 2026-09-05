@@ -20,6 +20,7 @@ def cmd_eval(args):
     coeffs = json.loads(args.coefficients)
     result = poly_eval(coeffs, args.x, args.prime)
     print(json.dumps({"x": args.x, "value": result, "prime": args.prime}, indent=2))
+    return 0
 
 
 def cmd_domain(args):
@@ -28,6 +29,7 @@ def cmd_domain(args):
     print(json.dumps({"size": args.size, "prime": args.prime,
                        "domain": domain[:20],  # show first 20
                        "domain_length": len(domain)}, indent=2))
+    return 0
 
 
 def cmd_merkle(args):
@@ -35,7 +37,6 @@ def cmd_merkle(args):
     values = json.loads(args.values)
     root, layers = merkle_commit(values)
     proof = merkle_open(layers, args.index)
-    leaf_hash = json.dumps(values[args.index]).encode().hex()[:64]  # simplified
     from zk_stark_fri.engine import _hash
     leaf_hash = _hash(str(values[args.index]))
     valid = merkle_verify(root, leaf_hash, proof, args.index)
@@ -46,6 +47,7 @@ def cmd_merkle(args):
         "proof_length": len(proof),
         "verified": valid,
     }, indent=2))
+    return 0
 
 
 def cmd_fold(args):
@@ -60,6 +62,7 @@ def cmd_fold(args):
         "new_evaluations": new_evals,
         "new_domain": new_domain,
     }, indent=2))
+    return 0
 
 
 def cmd_commit(args):
@@ -72,6 +75,7 @@ def cmd_commit(args):
         "num_rounds": proof.rounds,
         "evaluations_per_round": [len(e) for e in all_evals],
     }, indent=2))
+    return 0
 
 
 def cmd_soundness(args):
@@ -79,6 +83,7 @@ def cmd_soundness(args):
     result = soundness_analysis(args.degree, args.field_size,
                                  args.num_queries, args.num_rounds)
     print(json.dumps(result, indent=2))
+    return 0
 
 
 def cmd_demo(args):
@@ -86,6 +91,7 @@ def cmd_demo(args):
     coeffs = json.loads(args.coefficients) if args.coefficients else [1, 2, 3, 4]
     result = run_fri_protocol(coeffs, args.prime, args.domain_size, args.num_queries)
     print(json.dumps(result, indent=2))
+    return 0
 
 
 def main(argv=None):

@@ -420,8 +420,8 @@ class ZkstarkfriproveragentEnrichmentSuite:
         self.zkproofaggregationfo = ZkProofAggregationForBatchVerificationEngine()
         self.formalsecurityproofd = FormalSecurityProofDocumentationSoundnessZeroknowledgeEngine()
         self.nistcompliancecertif = NistComplianceCertificationChecklistWithTestVectorValidationEngine()
-        self.additionalenhancemen = AdditionalEnhancementFriCommitmentPerformanceProfilerEngine()
-        self.additionalenhancemen = AdditionalEnhancementAirConstraintSystemAnalyzerEngine()
+        self.friprofiler = AdditionalEnhancementFriCommitmentPerformanceProfilerEngine()
+        self.airanalyzer = AdditionalEnhancementAirConstraintSystemAnalyzerEngine()
 
     def execute_all(self, primary_val: float = 1.5, secondary_val: float = 0.5) -> Dict[str, Any]:
         results = {}
@@ -431,8 +431,8 @@ class ZkstarkfriproveragentEnrichmentSuite:
         results["ZkProofAggregationForBatchVerificationEngine"] = self.zkproofaggregationfo.evaluate(primary_val, secondary_val)
         results["FormalSecurityProofDocumentationSoundnessZeroknowledgeEngine"] = self.formalsecurityproofd.evaluate(primary_val, secondary_val)
         results["NistComplianceCertificationChecklistWithTestVectorValidationEngine"] = self.nistcompliancecertif.evaluate(primary_val, secondary_val)
-        results["AdditionalEnhancementFriCommitmentPerformanceProfilerEngine"] = self.additionalenhancemen.evaluate(primary_val, secondary_val)
-        results["AdditionalEnhancementAirConstraintSystemAnalyzerEngine"] = self.additionalenhancemen.evaluate(primary_val, secondary_val)
+        results["AdditionalEnhancementFriCommitmentPerformanceProfilerEngine"] = self.friprofiler.evaluate(primary_val, secondary_val)
+        results["AdditionalEnhancementAirConstraintSystemAnalyzerEngine"] = self.airanalyzer.evaluate(primary_val, secondary_val)
         return results
 
 # Global instance
