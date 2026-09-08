@@ -2,7 +2,7 @@
   "project": "zk-stark-fri-prover-agent",
   "status": "COMPLETED_NO_CHANGES",
   "branch": "master",
-  "commit": "1262162",
+  "commit": "61d24ab",
   "pushed": true,
   "tests": "PASS",
   "working_tree": "CLEAN",
