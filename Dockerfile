@@ -5,7 +5,7 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
 COPY . .
-RUN pip install --no-cache-dir ".[server]" && useradd --create-home --uid 10001 appuser
+RUN pip install --no-cache-dir fastapi uvicorn pydantic && useradd --create-home --uid 10001 appuser
 USER appuser
 
 EXPOSE 8000
