@@ -460,67 +460,107 @@ def fri_query(all_evaluations: List[List[int]], all_domains: List[List[int]],
     return query_proofs
 
 
+def _degree_at_most(evals: List[int], domain: List[int],
+                    maximum: int, p: int) -> bool:
+    """Interpolate first d+1 points and test every remaining point."""
+    n = len(evals)
+    if maximum < 0 or n != len(domain) or len(set(domain)) != n:
+        return False
+    if maximum >= n - 1:
+        return True
+    if maximum == 0:
+        return all(v % p == evals[0] % p for v in evals)
+    # Newton divided differences for the first maximum+1 points.
+    count = maximum + 1
+    coeffs = [v % p for v in evals[:count]]
+    for j in range(1, count):
+        for i in range(count - 1, j - 1, -1):
+            denominator = (domain[i] - domain[i - j]) % p
+            coeffs[i] = ((coeffs[i] - coeffs[i - 1]) *
+                         mod_inverse(denominator, p)) % p
+    for k in range(count, n):
+        x, value = domain[k], coeffs[count - 1]
+        for j in range(count - 2, -1, -1):
+            value = (value * (x - domain[j]) + coeffs[j]) % p
+        if value != evals[k] % p:
+            return False
+    return True
+
+
 def fri_verify(proof: FRIProof, all_evaluations: List[List[int]],
-               all_domains: List[List[int]], p: int) -> Tuple[bool, Dict[str, Any]]:
-    """
-    Verify a FRI proof.
-    
-    Checks:
-    1. Merkle roots match commitments
-    2. Folding consistency (evaluations are consistent with folding)
-    3. Final evaluations are from a low-degree polynomial
+               all_domains: List[List[int]], p: int,
+               max_degree: Optional[int] = None) -> Tuple[bool, Dict[str, Any]]:
+    """Validate a complete *educational* FRI execution trace.
+
+    This verifier requires all oracle evaluations supplied out of band.
+    It is NOT a succinct STARK proof or a cryptographically sound NIZK.
+    Callers may supply a public max_degree bound.
     """
     details = {
-        "merkle_checks": [],
-        "folding_checks": [],
-        "final_degree_check": False,
-        "is_valid": True,
+        "merkle_checks": [], "folding_checks": [],
+        "final_degree_check": False, "is_valid": False,
+        "security_note": "Full-trace educational validation; not a secure STARK verifier",
     }
-
-    # Check Merkle proofs for each query
-    for q_idx, query_proof in enumerate(proof.query_proofs):
-        for step in query_proof:
-            valid = merkle_verify(step["root"], step["leaf_hash"],
-                                  step["merkle_proof"], step["index"])
-            details["merkle_checks"].append({
-                "query": q_idx,
-                "round": step["round"],
-                "merkle_valid": valid,
-            })
-            if not valid:
-                details["is_valid"] = False
-
-    # Check folding consistency
-    for round_num in range(len(all_evaluations) - 1):
-        if round_num >= len(proof.folding_alphas):
-            break
-        alpha = proof.folding_alphas[round_num]
-        evals = all_evaluations[round_num]
-        domain = all_domains[round_num]
-
-        if len(evals) <= 2:
-            break
-
-        new_evals, _ = fri_fold(evals, domain, alpha, p)
-        expected = all_evaluations[round_num + 1] if round_num + 1 < len(all_evaluations) else []
-
-        if expected and len(new_evals) == len(expected):
-            consistent = all(a == b for a, b in zip(new_evals, expected))
-            details["folding_checks"].append({
-                "round": round_num,
-                "consistent": consistent,
-            })
+    try:
+        if not _is_prime(p) or len(all_evaluations) == 0:
+            return False, details
+        if len(all_evaluations) != len(all_domains):
+            return False, details
+        rounds = len(all_evaluations) - 1
+        if rounds != proof.rounds or len(proof.roots) != rounds:
+            return False, details
+        if len(proof.folding_alphas) != rounds:
+            return False, details
+        degree_bound = proof.claimed_degree if max_degree is None else max_degree
+        if not isinstance(degree_bound, int) or degree_bound < 0:
+            return False, details
+        if degree_bound >= len(all_evaluations[0]):
+            return False, details
+        if (proof.final_evaluations != all_evaluations[-1] or
+                any(len(evals) != len(domain) or not evals for evals, domain
+                    in zip(all_evaluations, all_domains))):
+            return False, details
+        for r in range(rounds):
+            root, _ = merkle_commit(all_evaluations[r])
+            if root != proof.roots[r]:
+                return False, details
+            alpha = proof.folding_alphas[r]
+            if not isinstance(alpha, int) or not 0 < alpha < p:
+                return False, details
+            folded, domain = fri_fold(all_evaluations[r], all_domains[r], alpha, p)
+            consistent = (folded == all_evaluations[r+1] and
+                          domain == all_domains[r+1])
+            details["folding_checks"].append({"round": r, "consistent": consistent})
             if not consistent:
-                details["is_valid"] = False
-
-    # Final degree check
-    final_evals = proof.final_evaluations
-    if len(final_evals) <= 2:
-        details["final_degree_check"] = True
-    else:
-        details["final_degree_check"] = True  # Simplified: trust the protocol
-
-    return details["is_valid"], details
+                return False, details
+        for qi, query in enumerate(proof.query_proofs):
+            if len(query) != rounds:
+                return False, details
+            for r, step in enumerate(query):
+                i = step["index"]
+                if (step["round"] != r or not isinstance(i, int) or
+                        not 0 <= i < len(all_evaluations[r]) or
+                        step["evaluation"] != all_evaluations[r][i] or
+                        step["leaf_hash"] != _hash(str(step["evaluation"])) or
+                        step["root"] != proof.roots[r] or
+                        (r > 0 and i != query[r-1]["index"] % len(all_evaluations[r]))):
+                    return False, details
+                valid = merkle_verify(proof.roots[r], step["leaf_hash"],
+                                      step["merkle_proof"], i)
+                details["merkle_checks"].append(
+                    {"query": qi, "round": r, "merkle_valid": valid})
+                if not valid:
+                    return False, details
+        if len(all_evaluations[0]) > 2 and not proof.query_proofs:
+            return False, details
+        # Each binary fold reduces polynomial degree to floor(d / 2).
+        final_bound = degree_bound // (2 ** rounds)
+        details["final_degree_check"] = _degree_at_most(
+            all_evaluations[-1], all_domains[-1], final_bound, p)
+        details["is_valid"] = details["final_degree_check"]
+        return details["is_valid"], details
+    except (KeyError, IndexError, TypeError, ValueError, ZeroDivisionError):
+        return False, details
 
 
 # ---------------------------------------------------------------------------
