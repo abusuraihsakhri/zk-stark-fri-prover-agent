@@ -8,6 +8,7 @@ import hashlib
 import json
 import math
 import random
+import secrets
 from typing import List, Dict, Any, Tuple, Optional
 
 
@@ -22,6 +23,8 @@ def mod_pow(base: int, exp: int, mod: int) -> int:
 
 def mod_inverse(a: int, mod: int) -> int:
     """Modular inverse using Fermat's little theorem."""
+    if mod < 2 or a % mod == 0:
+        raise ValueError("Zero has no modular inverse")
     return pow(a, mod - 2, mod)
 
 
@@ -86,6 +89,12 @@ def generate_evaluation_domain(n: int, p: int) -> List[int]:
     Generate a multiplicative subgroup of order n in GF(p).
     Requires n | (p-1). Returns [1, ω, ω², ..., ω^(n-1)] where ω is a primitive nth root of unity.
     """
+    if not isinstance(n, int) or n < 1 or n & (n - 1):
+        raise ValueError("Domain size must be a positive power of two")
+    if not isinstance(p, int) or p < 3 or not _is_prime(p):
+        raise ValueError("Field modulus must be an odd prime smaller than 2**64")
+    if n > 65536:
+        raise ValueError("Domain size exceeds the educational engine limit (65536)")
     if (p - 1) % n != 0:
         raise ValueError(f"n={n} does not divide p-1={p-1}")
 
@@ -98,6 +107,32 @@ def generate_evaluation_domain(n: int, p: int) -> List[int]:
         domain.append((domain[-1] * omega) % p)
 
     return domain
+
+
+def _is_prime(n: int) -> bool:
+    """Deterministic Miller–Rabin primality check for 64-bit integers."""
+    if n < 2 or n >= 2**64:
+        return False
+    for small in (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37):
+        if n % small == 0:
+            return n == small
+    d, s = n - 1, 0
+    while d % 2 == 0:
+        d //= 2
+        s += 1
+    for a in (2, 325, 9375, 28178, 450775, 9780504, 1795265022):
+        if a % n == 0:
+            continue
+        x = pow(a, d, n)
+        if x in (1, n - 1):
+            continue
+        for _ in range(s - 1):
+            x = pow(x, 2, n)
+            if x == n - 1:
+                break
+        else:
+            return False
+    return True
 
 
 def _find_primitive_root(p: int) -> int:
@@ -224,8 +259,8 @@ def fri_fold(evaluations: List[int], domain: List[int],
         (new_evaluations, new_domain)
     """
     n = len(evaluations)
-    if n % 2 != 0:
-        raise ValueError("Number of evaluations must be even")
+    if n < 2 or n % 2 != 0:
+        raise ValueError("Number of evaluations must be even and at least two")
     if len(domain) != n:
         raise ValueError("Domain size must match evaluations size")
 
@@ -233,6 +268,9 @@ def fri_fold(evaluations: List[int], domain: List[int],
     new_evaluations = []
     new_domain = []
 
+    if any(x == 0 or domain[(i + half) % n] != (-x) % p
+           for i, x in enumerate(domain[:half])):
+        raise ValueError("Domain must contain ordered x, -x pairs")
     two_inv = mod_inverse(2, p)
 
     for i in range(half):
@@ -276,6 +314,7 @@ class FRIProof:
         self.final_evaluations: List[int] = []  # Final polynomial evaluations
         self.query_proofs: List[List[Dict[str, Any]]] = []  # Merkle proofs per query
         self.rounds: int = 0
+        self.claimed_degree: int = 0
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -283,6 +322,7 @@ class FRIProof:
             "folding_alphas": self.folding_alphas,
             "final_evaluations": self.final_evaluations,
             "rounds": self.rounds,
+            "claimed_degree": self.claimed_degree,
             "num_queries": len(self.query_proofs),
         }
 
@@ -302,10 +342,24 @@ def fri_commit(coefficients: List[int], domain: List[int],
     Returns:
         (proof, all_evaluations, all_domains)
     """
-    if seed is not None:
-        random.seed(seed)
+    if folding_factor != 2:
+        raise ValueError("Only binary FRI folding is implemented")
+    if not coefficients or not all(isinstance(c, int) for c in coefficients):
+        raise ValueError("Polynomial coefficients must be a nonempty integer list")
+    if not domain or len(domain) & (len(domain) - 1):
+        raise ValueError("Domain must have power-of-two length")
+    if len(set(domain)) != len(domain) or domain[0] != 1:
+        raise ValueError("Domain must be an ordered multiplicative subgroup")
+    if not isinstance(p, int) or p < 3 or not _is_prime(p):
+        raise ValueError("Field modulus must be an odd prime smaller than 2**64")
+    if max_rounds is not None and max_rounds < 0:
+        raise ValueError("max_rounds must not be negative")
+    rng = random.Random(seed) if seed is not None else secrets.SystemRandom()
 
     proof = FRIProof()
+    proof.claimed_degree = poly_degree([c % p for c in coefficients])
+    if proof.claimed_degree >= len(domain):
+        raise ValueError("Polynomial degree must be less than domain size")
     all_evaluations = []
     all_domains = []
 
@@ -315,7 +369,7 @@ def fri_commit(coefficients: List[int], domain: List[int],
     all_domains.append(domain)
 
     # Determine max rounds
-    deg = poly_degree(coefficients)
+    deg = proof.claimed_degree
     if max_rounds is None:
         max_rounds = max(1, int(math.log2(deg + 1)))
 
@@ -323,20 +377,17 @@ def fri_commit(coefficients: List[int], domain: List[int],
     current_domain = domain
 
     for round_num in range(max_rounds):
+        if len(current_evals) <= 2:
+            break
         # Commit
         root, layers = merkle_commit(current_evals)
         proof.roots.append(root)
 
         # Generate random challenge (Fiat-Shamir in non-interactive version)
-        alpha = random.randrange(1, p)
+        alpha = rng.randrange(1, p)
         proof.folding_alphas.append(alpha)
 
         # Fold
-        if len(current_evals) <= 2:
-            # Reached minimum degree - stop
-            proof.final_evaluations = current_evals
-            break
-
         new_evals, new_domain = fri_fold(current_evals, current_domain, alpha, p)
         all_evaluations.append(new_evals)
         all_domains.append(new_domain)
@@ -364,19 +415,27 @@ def fri_query(all_evaluations: List[List[int]], all_domains: List[List[int]],
     Returns:
         List of query proofs (one per query)
     """
+    if not isinstance(num_queries, int) or num_queries < 1:
+        raise ValueError("num_queries must be a positive integer")
+    if len(all_evaluations) != len(proof.roots) + 1:
+        raise ValueError("Incomplete FRI commitment trace")
+    rng = secrets.SystemRandom()
     query_proofs = []
+    proof.query_proofs = []
 
     for _ in range(num_queries):
         # Pick random index in initial domain
         n = len(all_evaluations[0])
-        idx = random.randrange(0, n)
+        idx = rng.randrange(0, n)
 
         query_proof = []
         current_idx = idx
 
-        for round_num in range(len(all_evaluations)):
+        for round_num in range(len(proof.roots)):
             evals = all_evaluations[round_num]
             root, layers = merkle_commit(evals)
+            if root != proof.roots[round_num]:
+                raise ValueError("Evaluation trace does not match committed root")
 
             # Get Merkle proof for current index
             actual_idx = current_idx % len(evals)
@@ -489,6 +548,7 @@ def soundness_analysis(degree: int, field_size: int, num_queries: int,
     total_error = per_round_error[-1] * query_error if per_round_error else 1.0
 
     return {
+        "security_note": "Heuristic illustration only; not a FRI soundness bound",
         "initial_degree": degree,
         "field_size": field_size,
         "num_queries": num_queries,
