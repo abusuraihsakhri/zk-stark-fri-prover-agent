@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "zk-stark-fri-prover-engine"
 version = "2.0.0"
-description = "ZK-STARK Fast Reed-Solomon Interactive Oracle Proof (FRI) Verification Engine"
+description = "Educational ZK-STARK FRI polynomial evaluation and verification trace engine"
 readme = "README.md"
 authors = [{ name = "Dr. Abu Suraih Sakhri", email = "abusuraih@example.com" }]
 license = { text = "MIT" }
@@ -14,14 +14,20 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Topic :: Security/Cryptography",
-    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 requires-python = ">=3.9"
 dependencies = []
+
+[project.optional-dependencies]
+server = ["fastapi>=0.110", "uvicorn>=0.27", "pydantic>=2"]
+test = ["pytest>=8"]
 
 [project.scripts]
 zk-stark-fri-prover-engine = "zk_stark_fri.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/abusuraihsakhri/zk-stark-fri-prover-engine"
-Repository = "https://github.com/abusuraihsakhri/zk-stark-fri-prover-engine.git"
+Homepage = "https://github.com/abusuraihsakhri/zk-stark-fri-prover-agent"
+Repository = "https://github.com/abusuraihsakhri/zk-stark-fri-prover-agent.git"
+
+[tool.setuptools.packages.find]
+include = ["agents*", "zk_stark_fri*"]
