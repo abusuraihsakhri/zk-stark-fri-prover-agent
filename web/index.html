@@ -1,236 +1,128 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zk Stark Fri Prover Engine — Operations Console</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #090d16;
-            --card: #111827;
-            --border: #1f293d;
-            --accent: #3b82f6;
-            --accent-glow: rgba(59, 130, 246, 0.25);
-            --text: #f3f4f6;
-            --text-muted: #9ca3af;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --success: #10b981;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            padding: 2rem;
-            min-height: 100vh;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        .header-title h1 { font-size: 1.6rem; font-weight: 700; color: #fff; }
-        .header-title p { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem; }
-        .badge {
-            display: inline-block;
-            padding: 0.3rem 0.8rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            background: var(--accent-glow);
-            color: var(--accent);
-            border: 1px solid var(--accent);
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1.2fr;
-            gap: 1.5rem;
-        }
-        .card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        }
-        .card h2 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .form-group { margin-bottom: 1rem; }
-        label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem; }
-        input, select, textarea {
-            width: 100%;
-            padding: 0.65rem 0.9rem;
-            background: #0d1322;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: #fff;
-            font-family: inherit;
-            font-size: 0.9rem;
-        }
-        input:focus, textarea:focus { outline: none; border-color: var(--accent); }
-        .btn {
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            padding: 0.7rem 1.4rem;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            width: 100%;
-        }
-        .btn:hover { background: #2563eb; }
-        .terminal {
-            background: #060911;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-            color: #10b981;
-            height: 380px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-        }
-        .metrics-bar {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        .metric-box {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            text-align: center;
-        }
-        .metric-val { font-size: 1.4rem; font-weight: 700; color: #fff; margin-top: 0.25rem; }
-        .metric-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="FRI folding and finite-field trace explorer">
+<title>FRI Trace Explorer</title>
+<style>
+:root {color-scheme:dark;--bg:#0b1020;--surface:#151f33;--line:#34435b;--fg:#eef4ff;--muted:#afbdd4;--accent:#70a7ff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,sans-serif;padding:24px}
+main{max-width:1120px;margin:auto}
+header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+h1{font-size:clamp(1.45rem,3vw,2rem);margin:0}
+h2{font-size:1.13rem;margin:0 0 14px}
+p{color:var(--muted)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:22px;margin:20px 0}
+.caveat{border-left:3px solid #ffcc75;padding:12px 16px;background:#1c283a}
+.caveat strong{color:#ffdb98}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 18px}
+label{display:block;font-weight:600;font-size:.88rem;margin-bottom:5px}
+input{width:100%;border:1px solid #576782;border-radius:7px;background:#0d1625;color:var(--fg);font:inherit;padding:10px}
+input[type=checkbox]{width:auto;accent-color:var(--accent)}
+input:focus-visible,button:focus-visible{outline:2px solid #9bc1ff;outline-offset:3px}
+button{padding:11px 17px;background:#2662c4;color:white;border:0;border-radius:7px;font-weight:600;cursor:pointer;margin-top:15px}
+button:disabled{opacity:.5;cursor:wait}
+pre{font:13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:auto;max-height:440px;min-height:110px;background:#0a1323;border:1px solid #34435b;border-radius:8px;padding:14px;margin:14px 0 0}
+footer{font-size:.85rem;color:var(--muted);padding:0 0 16px}
+a{color:#9bc1ff}
+@media(max-width:640px){body{padding:12px}.panel{padding:14px}.grid{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
-
-    <div class="header">
-        <div class="header-title">
-            <h1>Zk Stark Fri Prover Engine</h1>
-            <p>Domain: Clinical & Cryptographic AI | Standard: CAP / CLSI / NIST Standards | LabMind-Atlas Architecture</p>
-        </div>
-        <div>
-            <span class="badge">Air-Gapped Active</span>
-            <span class="badge" style="background: rgba(16,185,129,0.2); color: #10b981; border-color: #10b981;">Zero-PHI Guard Active</span>
-        </div>
-    </div>
-
-    <div class="metrics-bar">
-        <div class="metric-box">
-            <div class="metric-label">System Status</div>
-            <div class="metric-val" style="color: var(--success);" id="m-status">OPTIMAL</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-label">Tasks Processed</div>
-            <div class="metric-val" id="m-tasks">142</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-label">Audit Blocks Signed</div>
-            <div class="metric-val" id="m-audit">142</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-label">PHI Interceptions</div>
-            <div class="metric-val" style="color: var(--accent);" id="m-phi">0</div>
-        </div>
-    </div>
-
-    <div class="grid">
-        <div class="card">
-            <h2>⚙️ Dispatch Distributed Component Audit</h2>
-            <div class="form-group">
-                <label>Task / Sample ID</label>
-                <input type="text" id="task_id" value="TASK-2026-LIVE-01">
-            </div>
-            <div class="form-group">
-                <label>Target Identifier</label>
-                <input type="text" id="target_id" value="SPECIMEN-ALPHA-77">
-            </div>
-            <div class="form-group">
-                <label>Primary Measurement / Value</label>
-                <input type="number" id="primary_metric" value="29.4" step="0.1">
-            </div>
-            <div class="form-group">
-                <label>Secondary Metric / Kinetic Index</label>
-                <input type="number" id="secondary_metric" value="14.8" step="0.1">
-            </div>
-            <div class="form-group">
-                <label>Status / Phenotype Descriptor</label>
-                <input type="text" id="status_descriptor" value="DISCORDANT_ANOMALY">
-            </div>
-            <div class="form-group">
-                <label><input type="checkbox" id="is_critical" checked> Trigger Emergency / Critical Flag</label>
-            </div>
-            <button class="btn" onclick="runAudit()">Execute Distributed Component Audit</button>
-        </div>
-
-        <div class="card">
-            <h2>📊 Real-Time Consensus Dossier & Audit Log</h2>
-            <div class="terminal" id="outputConsole">// Zk Stark Fri Prover Engine Operations Console Ready
-// Connection established with Air-Gapped Supervisor
-// Cryptographic HMAC-SHA256 audit ledger loaded.
-// Ready for live task payload dispatch...</div>
-        </div>
-    </div>
-
-    <script>
-        async function runAudit() {
-            const consoleEl = document.getElementById('outputConsole');
-            consoleEl.innerText = "// Dispatching task across specialized workers...
-// Invoking InvariantQCWorker, SafetyEscalationWorker, ProtocolWorker...";
-
-            const payload = {
-                task_id: document.getElementById('task_id').value,
-                target_identifier: document.getElementById('target_id').value,
-                primary_metric: parseFloat(document.getElementById('primary_metric').value),
-                secondary_metric: parseFloat(document.getElementById('secondary_metric').value),
-                status_descriptor: document.getElementById('status_descriptor').value,
-                is_critical_flag: document.getElementById('is_critical').checked
-            };
-
-            try {
-                const res = await fetch('/api/audit', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                consoleEl.innerText = JSON.stringify(data, null, 2);
-                document.getElementById('m-tasks').innerText = parseInt(document.getElementById('m-tasks').innerText) + 1;
-                document.getElementById('m-audit').innerText = parseInt(document.getElementById('m-audit').innerText) + 1;
-            } catch (err) {
-                consoleEl.innerText = "// Offline / Simulation Output:\n" + JSON.stringify({
-                    dossier_id: "DOSSIER-SIM-" + Math.floor(Math.random()*10000),
-                    system: "zk-stark-fri-prover-engine",
-                    domain: "Clinical & Cryptographic AI",
-                    task_id: payload.task_id,
-                    overall_urgency: payload.is_critical_flag ? "CRITICAL_STAT_PANIC" : "ELEVATED_RISK",
-                    integrity_status: "DISCORDANT_ANOMALY",
-                    alerts: [
-                        { worker: "InvariantQCWorker", alert: "Primary metric exceeds upper reference bound" },
-                        { worker: "SafetyEscalationWorker", alert: "Critical emergency interlock flag active" }
-                    ],
-                    audit_hash: "HMAC_SHA256_e83f9a72b941d6c381f9"
-                }, null, 2);
-            }
-        }
-    </script>
+<main>
+<header>
+  <div><h1>FRI Trace Explorer</h1><p>Finite-field polynomial evaluation, commitments, folding and query-trace validation</p></div>
+  <a href="https://github.com/abusuraihsakhri/zk-stark-fri-prover-agent">Source repository</a>
+</header>
+<p class="caveat"><strong>Educational mathematics only.</strong> This is not a cryptographically sound STARK prover, succinct proof verifier, zero-knowledge protocol or security certification. The trace verifier needs all intermediate evaluations; the soundness estimates are illustrative.</p>
+<section class="panel" aria-labelledby="fri-title">
+<h2 id="fri-title">FRI demonstration — runs locally in browser Python</h2>
+<div class="grid">
+ <div><label for="coefficients">Coefficients (JSON array, constant first)</label><input id="coefficients" value="[1,2,3,4]" autocomplete="off"></div>
+ <div><label for="prime">Prime field modulus</label><input id="prime" type="number" min="3" step="1" value="65537"></div>
+ <div><label for="domain">Evaluation domain size (power of two, ≤256)</label><input id="domain" type="number" min="4" max="256" step="1" value="16"></div>
+ <div><label for="queries">Random queries (1–32)</label><input id="queries" type="number" min="1" max="32" step="1" value="3"></div>
+</div>
+<button type="button" id="run-fri">Run FRI demo</button>
+<pre id="fri-result" role="status" aria-live="polite">Ready. Initial run downloads Pyodide, then executes the repository's Python FRI engine locally.</pre>
+</section>
+<section class="panel" aria-labelledby="audit-title">
+<h2 id="audit-title">Optional backend parameter audit</h2>
+<p>This second feature requires the FastAPI backend on the same origin. It is unavailable on static GitHub Pages. Inputs are submitted to the configured backend; do not enter personal or sensitive data.</p>
+<div class="grid">
+ <div><label for="task">Task ID</label><input id="task" value="TASK-001"></div>
+ <div><label for="target">Target identifier</label><input id="target" value="TARGET-01"></div>
+ <div><label for="primary">Primary metric</label><input id="primary" type="number" step="any" value="29.4"></div>
+ <div><label for="secondary">Secondary metric</label><input id="secondary" type="number" step="any" value="14.8"></div>
+ <div><label for="status">Status descriptor</label><input id="status" value="DISCORDANT"></div>
+ <div><label for="critical"><input id="critical" type="checkbox" checked> Critical flag</label></div>
+</div>
+<button type="button" id="run-audit">Send audit request</button>
+<pre id="audit-result" role="status" aria-live="polite">No request sent.</pre>
+</section>
+<footer>Browser FRI computations are local after Pyodide is loaded from a public CDN; no input data is transmitted by this demonstration. The optional backend audit sends its entered fields to your configured server.</footer>
+</main>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js" defer></script>
+<script>
+"use strict";
+let runtime;
+const el = id => document.getElementById(id);
+el("run-fri").addEventListener("click", async () => {
+  const button = el("run-fri"), output = el("fri-result");
+  button.disabled = true;
+  try {
+    const coefficients = JSON.parse(el("coefficients").value);
+    const prime = Number(el("prime").value), size = Number(el("domain").value);
+    const queries = Number(el("queries").value);
+    if (!Array.isArray(coefficients) || coefficients.length === 0 ||
+        !coefficients.every(Number.isSafeInteger) || !Number.isSafeInteger(prime) ||
+        !Number.isSafeInteger(size) || size < 4 || size > 256 ||
+        !Number.isSafeInteger(queries) || queries < 1 || queries > 32)
+      throw new Error("Use integer coefficients, an integer field modulus, a domain size of 4–256 and 1–32 queries.");
+    output.textContent = "Loading Python runtime and engine…";
+    if (!runtime) {
+      if (typeof loadPyodide !== "function") throw new Error("Pyodide unavailable. Check CDN access.");
+      runtime = await loadPyodide();
+      const source = await fetch("./engine.py");
+      if (!source.ok) throw new Error("engine.py missing (HTTP " + source.status + ")");
+      runtime.FS.writeFile("engine.py", await source.text());
+    }
+    runtime.globals.set("input_json", JSON.stringify({coefficients, prime, size, queries}));
+    const code = [
+      "import json",
+      "from engine import run_fri_protocol",
+      "inp = json.loads(input_json)",
+      "json.dumps(run_fri_protocol(inp['coefficients'], inp['prime'], inp['size'], inp['queries']), indent=2)"
+    ].join("\n");
+    output.textContent = await runtime.runPythonAsync(code);
+  } catch (error) {
+    output.textContent = "FRI demo failed: " + error.message;
+  } finally { button.disabled = false; }
+});
+el("run-audit").addEventListener("click", async () => {
+  const button = el("run-audit"), output = el("audit-result");
+  button.disabled = true;
+  try {
+    const payload = {
+      task_id: el("task").value, target_identifier: el("target").value,
+      primary_metric: Number(el("primary").value), secondary_metric: Number(el("secondary").value),
+      status_descriptor: el("status").value, is_critical_flag: el("critical").checked
+    };
+    if (!Number.isFinite(payload.primary_metric) || !Number.isFinite(payload.secondary_metric))
+      throw new Error("Metrics must be finite numbers.");
+    output.textContent = "Contacting FastAPI backend…";
+    const response = await fetch("./api/audit", {
+      method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error("HTTP " + response.status + " — backend unavailable or request rejected");
+    const data = await response.json();
+    output.textContent = JSON.stringify(data, null, 2);
+  } catch(error) {
+    output.textContent = "Audit not completed: " + error.message + ". No simulated result was created.";
+  } finally { button.disabled = false; }
+});
+</script>
 </body>
 </html>

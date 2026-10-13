@@ -1,40 +1,48 @@
-name: Zk Stark Fri Prover Engine CI/CD & Security Verification
+name: Test, build and audit
 
 on:
   push:
-    branches: [ master, main ]
+    branches: [master, main]
   pull_request:
-    branches: [ master, main ]
+    branches: [master, main]
+
+permissions:
+  contents: read
 
 jobs:
   test-and-audit:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
 
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install fastapi uvicorn pydantic pytest
-
-    - name: Run Pytest Suite
-      run: |
-        pytest -v
-
-    - name: Security SAST & Zero-PHI Audit
-      run: |
-        python -c "
-        from agents.base import PHIGuard, AuditLogger
-        import pytest
-        assert AuditLogger.verify_integrity() is True
-        print('Security & Zero-PHI Audit Passed!')
-        "
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install project, server and tests
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[server,test]"
+          python -m pip check
+      - name: Test
+        run: python -m pytest -v
+      - name: Compile source and build distribution
+        run: |
+          python -m compileall -q zk_stark_fri agents cli.py enrichment.py simulator.py
+          python -m pip wheel . --no-deps -w /tmp/wheels
+      - name: Validate browser script syntax and staging
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path("web/index.html").read_text(encoding="utf-8")
+          match = re.search(r"<script>(.*?)</script>", html, re.DOTALL)
+          assert match, "Browser module script missing"
+          Path("/tmp/fri-browser.js").write_text(match.group(1), encoding="utf-8")
+          assert Path("zk_stark_fri/engine.py").exists()
+          PY
+          node --check /tmp/fri-browser.js
