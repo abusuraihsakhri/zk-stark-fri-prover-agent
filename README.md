@@ -1,191 +1,74 @@
-# ZK STARK FRI Prover Agent
+# ZK-STARK FRI Prover Agent
 
-> **Domain:** Post-Quantum Cryptography & Zero-Knowledge Architecture
-> **Reference Guidelines & Standards:** `NIST FIPS 203/204/205, NIST SP 800-90B & ISO/IEC Standards`
+A Python educational implementation of finite-field polynomial evaluation, Merkle commitments, binary FRI folding and complete-trace consistency checking. Also includes an independent parameter-audit agent and an optional FastAPI service.
 
-<div align="center">
+> **Important:** This repository is not a secure or production-ready STARK implementation, zero-knowledge proof system, succinct verifier, or implementation validated against NIST FIPS standards. The verifier requires the complete polynomial evaluation trace and does not implement a cryptographically bound Fiat–Shamir transcript. Reported soundness estimates are heuristic and must not be interpreted as security guarantees.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776AB.svg?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688.svg?logo=fastapi&logoColor=white)
-![Audit Trail](https://img.shields.io/badge/Audit-HMAC--SHA256_Tamper--Evident-brightgreen.svg)
-![Zero-PHI Guard](https://img.shields.io/badge/Guard-Zero--PHI_Outbound-blue.svg)
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)
+## Features
 
-</div>
+- Pure Python (standard-library) finite-field arithmetic, subgroup generation, polynomial evaluation and FRI folding.
+- Merkle tree commitments and opening checks, complete FRI trace checks and configurable degree claims.
+- CLI examples for evaluation, domain generation, Merkle trees, folding and FRI demonstration.
+- Browser FRI demonstration using Pyodide; all entered coefficients are processed in-browser after downloading the Python runtime. No backend is necessary for this demonstration.
+- Optional local FastAPI parameter-audit API and operations UI. The audit thresholds are demonstrations and do not establish cryptographic validity.
+- HMAC-SHA256 chained audit records. Audit records are process-local and not durable or independently anchored.
 
----
+## Run in the browser
 
-## 📖 What It Does
+The static application is built from `web/index.html` plus `zk_stark_fri/engine.py` by the Pages workflow. GitHub Pages must be enabled using GitHub Actions as its source before the app can be published; do not treat a workflow file alone as confirmation of a working deployment. The browser needs internet access to download Pyodide from the pinned CDN URL. Sensitive information should not be entered.
 
-**ZK STARK FRI Prover Agent** is an advanced analytical and computational platform implementing Transparent ZK-STARK Fast Reed-Solomon Interactive Oracle Proof (FRI) verification. It provides:
+## Local installation
 
-- A **pure-Python FRI engine** (no external crypto dependencies) implementing polynomial evaluation, Merkle commitments, FRI folding, and soundness analysis.
-- A **multi-agent evaluation system** with PHI outbound guarding and HMAC-SHA256 tamper-evident audit trails.
-- A **FastAPI REST server** with Prometheus-compatible metrics.
-- A **batch simulator** for high-throughput stress testing.
-
----
-
-## ⚙️ Key Capabilities & Algorithmic Modules
-
-### FRI Engine (`zk_stark_fri/engine.py`)
-- **Finite field arithmetic** — prime-field operations in GF(p).
-- **Polynomial operations** — evaluation (Horner), degree, add, scale.
-- **Evaluation domains** — multiplicative subgroups via primitive nth roots of unity.
-- **Merkle trees** — commit, open, verify over polynomial evaluations.
-- **FRI folding** — reduce-degree folding with random challenges.
-- **FRI protocol** — full commit → query → verify pipeline.
-- **Soundness analysis** — per-round error and total soundness bits.
-- **FrontierDomainEngine** — parameter evaluation for agent auditing.
-
-### Agent System (`agents/`)
-- **Workers** — `InvariantQCWorker`, `SafetyEscalationWorker`, `ProtocolConformanceWorker`.
-- **Supervisor** — `SystemSupervisor` orchestrates multi-worker consensus.
-- **PHI Guard** — regex + AST inspection blocking SSNs, MRNs, emails, phone numbers.
-- **Audit Trail** — chained HMAC-SHA256 tamper-evident logging.
-- **Metrics Collector** — Prometheus-format operational telemetry.
-- **LLM Factory** — pluggable Ollama / Claude / OpenAI / mock adapters.
-
-### Enrichment Suite (`enrichment.py`)
-- Performance benchmarking, side-channel analysis, interoperability testing, ZK proof aggregation, formal security documentation, NIST compliance, FRI profiling, AIR constraint analysis.
-
----
-
-## 💻 Installation
+Requires Python 3.9 or later; GitHub Actions tests 3.10, 3.11 and 3.12.
 
 ```bash
-# Clone the repository
 git clone https://github.com/abusuraihsakhri/zk-stark-fri-prover-agent.git
 cd zk-stark-fri-prover-agent
-
-# (Optional) Create a virtual environment
 python -m venv .venv
-source .venv/bin/activate  # or .venv\Scripts\activate on Windows
-
-# Install core dependencies (stdlib-only engine needs nothing)
-pip install fastapi uvicorn pydantic pytest
+source .venv/bin/activate
+python -m pip install -e ".[server,test]"
+python -m pytest -v
 ```
 
----
-
-## 🧪 CLI Usage
-
-### FRI Engine CLI (`cli.py`)
+### FRI CLI
 
 ```bash
-# Evaluate a polynomial f(x) = 1 + 2x + 3x² + 4x³ at x = 2 (mod 65537)
-python cli.py eval --coefficients "[1, 2, 3, 4]" --x 2 --prime 65537
-
-# Generate an evaluation domain of size 16
+python cli.py eval --coefficients "[1,2,3,4]" --x 2 --prime 65537
 python cli.py domain --size 16 --prime 65537
-
-# Run a full FRI protocol demo
-python cli.py demo --coefficients "[1, 2, 3, 4]" --domain-size 16 --num-queries 3
-
-# Analyze soundness for given parameters
+python cli.py demo --coefficients "[1,2,3,4]" --domain-size 16 --num-queries 3
 python cli.py soundness --degree 8 --field-size 65537 --num-queries 5 --num-rounds 4
 ```
 
-### Agent System CLI (`zk_stark_fri/cli.py`)
+### Optional backend
 
 ```bash
-# Run a single audit evaluation
-python -m zk_stark_fri.cli audit --task-id "TASK-001" --target "TARGET-01" --primary 28.4 --secondary 14.2 --critical --status "DISCORDANT"
-
-# Batch process a CSV file
-python -m zk_stark_fri.cli batch -i sample.csv -o results.csv
-
-# Interactive chat with the supervisor
-python -m zk_stark_fri.cli chat "What is the system status?"
-
-# Verify audit trail integrity
-python -m zk_stark_fri.cli verify-audit
-
-# Launch FastAPI server
-python -m zk_stark_fri.cli serve --host 127.0.0.1 --port 8000
+export AUDIT_SECRET_KEY="$(python -c 'import secrets; print(secrets.token_hex(32))')"
+uvicorn agents.api:app --host 127.0.0.1 --port 8000
 ```
 
----
+Open `http://127.0.0.1:8000/`. The FRI demo executes locally in-browser; the parameter-audit form posts to `/api/audit`. Other endpoints include `/health`, `/metrics` (JSON), and `/api/chat`. The audit-log endpoint `/api/audit/logs` is disabled unless `AUDIT_ADMIN_TOKEN` is set, and requires the `X-Audit-Token` header.
 
-## 🧪 Testing & Verification
-
-```bash
-# Run the full test suite (38 tests)
-pytest -v
-
-# Run a specific test module
-pytest tests/test_zk_stark_fri.py -v
-
-# Execute high-throughput batch simulation
-python simulator.py 1000
-```
-
----
-
-## 🐳 Container Deployment
+### Docker
 
 ```bash
 docker build -t zk-stark-fri-prover-agent .
-docker run -p 8000:8000 -e AUDIT_SECRET_KEY=$(openssl rand -hex 32) zk-stark-fri-prover-agent
+docker run --rm -p 127.0.0.1:8000:8000 -e AUDIT_SECRET_KEY="$(python -c 'import secrets; print(secrets.token_hex(32))')" zk-stark-fri-prover-agent
 ```
 
-Or with Docker Compose:
+With Docker Compose, set `AUDIT_SECRET_KEY` before running `docker compose up --build`. By default Compose binds only to localhost. Do not publicly expose the unauthenticated parameter-audit API without implementing suitable authentication, request size limits and rate limiting.
 
-```bash
-docker compose up --build
-```
+## Privacy and security limitations
 
----
+- The browser's FRI demonstration does not upload entered coefficients to the application server, but obtains runtime assets from an external CDN.
+- The optional API sends entered fields to your configured server; the regex-based PHI guard is **not** complete de-identification and does not establish HIPAA compliance.
+- The audit HMAC chain detects record modification while the signing key and chain head remain trusted, but persistence, key management, and external anchoring are not implemented.
+- FRI randomness is not bound to a secure public transcript; do not use the implementation for real cryptographic attestations.
+- Default audit inputs and agent responses are demonstrative; consult code for the actual thresholds.
 
-## 🛡️ Security & Enterprise Architecture
+## Technology
 
-* **Zero-PHI Outbound Interceptor:** Active regex inspection blocking SSNs, MRNs, phone numbers, emails, DOB, and patient identifiers.
-* **Tamper-Evident HMAC-SHA256 Audit Trail:** Chained, cryptographically signed logs for every evaluation and state transition.
-* **Secure defaults:** `AUDIT_SECRET_KEY` must be set in production; a random ephemeral key is generated at runtime otherwise (with a warning).
-* **Air-Gapped LLM Reasoning Adapter:** Agnostic integration for local Ollama instances, Claude, GPT-4o, and deterministic test mocks.
-* **Active Learning Bayesian Calibration:** Dynamic tracker updating worker reliability weights.
-* **FastAPI & Prometheus Telemetry:** Exposes OpenAPI 3.1 REST endpoints and `/metrics`.
+Python 3.9+, setuptools, optional FastAPI/Pydantic/Uvicorn, Pyodide for browser execution, vanilla HTML/CSS/JavaScript, pytest, GitHub Actions. Works in current browsers supporting WebAssembly and the Pyodide runtime (subject to CDN access). The browser demonstration may consume significant time or memory for larger inputs.
 
----
+## License
 
-## 📁 Project Structure
-
-```
-zk-stark-fri-prover-agent/
-├── agents/                  # Enterprise agent system (PHI guard, audit, workers, supervisor)
-│   ├── api.py               # FastAPI REST endpoints
-│   ├── base.py              # PHIGuard, AuditTrail, SecurityException
-│   ├── models.py            # Pydantic schemas (SystemTaskPayload, ConsensusDossier)
-│   ├── workers.py           # Specialized domain workers
-│   ├── supervisor.py        # Master orchestrator
-│   ├── metrics.py           # Prometheus-format collector
-│   ├── llm_factory.py       # Pluggable LLM provider
-│   └── streamer.py          # WebSocket telemetry broadcaster
-├── zk_stark_fri/            # Core FRI engine package
-│   ├── engine.py            # FRI protocol + FrontierDomainEngine
-│   ├── agents.py            # ZK-STARK coordinator sub-agents
-│   ├── models.py            # FrontierPayload, AgentTelemetryAlert
-│   ├── cli.py               # Agent CLI (audit, chat, batch, serve)
-│   └── server.py            # FastAPI app factory
-├── tests/                   # Pytest test suite
-│   ├── test_zk_stark_fri.py # FRI engine tests (field, poly, merkle, FRI)
-│   ├── test_enrichment.py   # Enrichment suite tests
-│   └── test_zk_stark_fri_prover_agent.py  # Agent system tests
-├── web/index.html           # Operations console UI
-├── cli.py                   # FRI engine CLI entry point
-├── simulator.py             # High-throughput batch simulator
-├── enrichment.py            # Enrichment feature implementations
-├── sample.csv               # Sample batch input
-├── sample_payload.json      # Sample API payload
-├── benchmark_dataset.json   # Golden benchmark test vectors
-├── Dockerfile               # Container build
-├── docker-compose.yml       # Compose orchestration
-└── pyproject.toml           # Project metadata & build config
-```
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.
+MIT — see [LICENSE](LICENSE).
